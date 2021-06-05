@@ -1,4 +1,5 @@
 # get the library imports for the code
+# pypiwin32==301
 import streamlit as st
 from pandas_datareader import data
 import pandas as pd
