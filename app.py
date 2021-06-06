@@ -3,6 +3,7 @@ import streamlit as st
 from pandas_datareader import data
 import pandas as pd
 import matplotlib.pyplot as plt
+import time
 import numpy as np
 import requests
 from datetime import datetime as dt
@@ -50,8 +51,10 @@ col2.dataframe(data=nifty[nifty['Industry'] == industry], width=None, height=Non
     ## Stock Historical Behavior 
 '''
 
+options_expander = st.beta_expander("Additional Filters")
+
 # define the two column objects to be made
-col1, col2, col3, col4 = st.beta_columns(4)
+col1, col2, col3, col4 = options_expander.beta_columns(4)
 
 company = col1.selectbox('Company', nifty.Symbol.to_list())
 temp = today - timedelta(days=28)
@@ -70,7 +73,18 @@ if metrics.__len__() == 0:
 else:
     col2.line_chart(df[metrics])
 
-status_text = st.empty()
+'''
+    ## Had You Invested in this Strategy with...
+'''
+
+col1, col2, col3 = st.beta_columns(3)
+amount = col1.number_input("Rupees (In INR)", min_value = 0)
+temp = today - timedelta(days=28)
+start = col2.date_input("From", value=temp)
+end = col3.date_input("To", value=today)
+
+
+status_text = st.sidebar.empty()
 
 @st.cache(suppress_st_warning=True)
 def get_sorted_data(nifty, start_date, end_date):
@@ -117,7 +131,6 @@ def get_sorted_data(nifty, start_date, end_date):
         print(nifty.shape)
     return nifty
 
-
 # SideBar Elements
 st.sidebar.title("Configuration Panel")
 
@@ -131,7 +144,7 @@ submit = form.form_submit_button(label='Submit')
 
 # if the user submits the start and end date for the strategy, then only execute the logic to get the historical data
 if submit:
-    progress_bar = st.progress(0)
+    progress_bar = st.sidebar.progress(0)
 
     for i in range(100):
         # Update progress bar.
