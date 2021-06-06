@@ -1,5 +1,4 @@
 # get the library imports for the code
-# pypiwin32==301
 import streamlit as st
 from pandas_datareader import data
 import pandas as pd
@@ -12,9 +11,12 @@ from itertools import islice
 
 st.set_page_config(page_title="Quantitative Momentum Strategy", page_icon=None, layout='wide', initial_sidebar_state='auto')
 
+# initialize today's date for further use
 today = dt.today().date()
 # start_date = today - timedelta(days=31)
 # end_date = today - timedelta(days=361)
+
+# Main Webpage Elements
 
 st.title("Quantitative Momentum Strategy")
 
@@ -23,16 +25,6 @@ This app ranks the **CNX 500** listed stocks in the highest order of the followi
 * **Generic Momentum:** [Wikipedia](https://en.wikipedia.org/wiki/Momentum_investing)
 * **Frog In the Pan Score (FIP Score):** [Wikipedia](http://www.stagirit.org/sites/default/files/articles/a_0280_frog_in_the_pan_identifying_the_highest_quality_momentum_stocks_-_alpha_architect.pdf).
 """)
-
-st.sidebar.title("Configuration Panel")
-
-st.sidebar.write('Press submit to get the momentum ranking on your desired time scale')
-
-form = st.sidebar.form(key='my_form')
-sd = form.date_input('Start Date')
-ed = form.date_input('End Date')
-
-submit = form.form_submit_button(label='Submit')
 
 # read the data from the source csv file
 nifty = pd.read_csv("ind_nifty500list.csv")
@@ -79,11 +71,8 @@ else:
     col2.line_chart(df[metrics])
 
 
-# if the user submits the start and end date for the strategy, then only execute the logic to get the historical data
-if submit:
-    print(sd)
-    print(ed)
-
+@st.cache(suppress_st_warning=True)
+def get_sorted_data(nifty, start_date, end_date):
     length_to_split = [100, 100, 100, 100, 98]
 
     symbols = nifty['Symbol'].to_list()
@@ -98,18 +87,16 @@ if submit:
     j = 1
     for li in o_symbols:
         for i in li:
-            print(j)
-            print(i)
             index = nifty[nifty['Symbol'] == i].index
 
-            df = data.DataReader(name=i+".NS", data_source="yahoo", start=str(sd), end=str(ed))
+            df = data.DataReader(name=i+".NS", data_source="yahoo", start=str(start_date), end=str(end_date))
             df = df.reset_index()
-            print(df)
+           
             # assign the start date open close values and end date open close values
-            nifty.at[index, 'Open_Start'] = df[df['Date'] == pd.to_datetime(sd)]['Open'].iloc[0]
-            nifty.at[index, 'Open_End'] = df[df['Date'] == pd.to_datetime(ed)]['Open'].iloc[0]
-            nifty.at[index, 'Close_Start'] = df[df['Date'] == pd.to_datetime(sd)]['Close'].iloc[0]
-            nifty.at[index, 'Close_End'] = df[df['Date'] == pd.to_datetime(sd)]['Close'].iloc[0]
+            nifty.at[index, 'Open_Start'] = df[df['Date'] == pd.to_datetime(start_date)]['Open'].iloc[0]
+            nifty.at[index, 'Open_End'] = df[df['Date'] == pd.to_datetime(end_date)]['Open'].iloc[0]
+            nifty.at[index, 'Close_Start'] = df[df['Date'] == pd.to_datetime(start_date)]['Close'].iloc[0]
+            nifty.at[index, 'Close_End'] = df[df['Date'] == pd.to_datetime(end_date)]['Close'].iloc[0]
 
             # get the indices of the rows in df where the return is positive, negative and neutral
             df['Returns'] = round(df['Close'] - df['Open'], 2)
@@ -127,7 +114,21 @@ if submit:
             j += 1
 
         print(nifty.shape)
+    return nifty
 
-    nifty.to_csv("final_list.csv",index=False)
 
+# SideBar Elements
+st.sidebar.title("Configuration Panel")
 
+st.sidebar.write('Press submit to get the momentum ranking on your desired time scale')
+
+form = st.sidebar.form(key='my_form')
+momentum_start_date = form.date_input('Start Date')
+momentum_end_date = form.date_input('End Date')
+
+submit = form.form_submit_button(label='Submit')
+
+# if the user submits the start and end date for the strategy, then only execute the logic to get the historical data
+if submit:
+    resultant_data = get_sorted_data(nifty, momentum_start_date, momentum_end_date)
+    st.dataframe(data=resultant_data, width=None, height=None)
