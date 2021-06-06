@@ -70,6 +70,7 @@ if metrics.__len__() == 0:
 else:
     col2.line_chart(df[metrics])
 
+status_text = st.empty()
 
 @st.cache(suppress_st_warning=True)
 def get_sorted_data(nifty, start_date, end_date):
@@ -130,5 +131,22 @@ submit = form.form_submit_button(label='Submit')
 
 # if the user submits the start and end date for the strategy, then only execute the logic to get the historical data
 if submit:
-    resultant_data = get_sorted_data(nifty, momentum_start_date, momentum_end_date)
-    st.dataframe(data=resultant_data, width=None, height=None)
+    progress_bar = st.progress(0)
+
+    for i in range(100):
+        # Update progress bar.
+        progress_bar.progress(i + 1)
+
+        # Update status text.
+        status_text.text(
+            'The data is getting pulled and loaded into a dataframe')
+
+        # Pretend we're doing some computation that takes time.
+        time.sleep(0.1)
+
+        status_text.text('Done!')
+
+        st.balloons()
+        resultant_data = get_sorted_data(nifty, momentum_start_date, momentum_end_date)
+        
+        st.dataframe(data=resultant_data, width=None, height=None)
