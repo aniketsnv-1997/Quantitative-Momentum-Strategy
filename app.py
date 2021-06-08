@@ -135,7 +135,7 @@ status_text = st.sidebar.empty()
 def get_data(symbol, start_date, end_date):
     print(symbol)
 
-    df = data.DataReader(name=symbol+".NS", data_source="yahoo", start=str(start_date), end=str())
+    df = data.DataReader(name=symbol+".NS", data_source="yahoo", start=str(start_date), end=str(end_date))
     df = df.reset_index()
 
     # to calculate the momentum, the following four values are required
