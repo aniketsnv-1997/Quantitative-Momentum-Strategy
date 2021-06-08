@@ -86,50 +86,86 @@ end = col3.date_input("To", value=today)
 
 status_text = st.sidebar.empty()
 
-@st.cache(suppress_st_warning=True)
-def get_sorted_data(nifty, start_date, end_date):
-    length_to_split = [100, 100, 100, 100, 98]
+# @st.cache(suppress_st_warning=True)
+# def get_sorted_data(nifty, start_date, end_date):
+#     length_to_split = [100, 100, 100, 100, 98]
 
-    symbols = nifty['Symbol'].to_list()
-    symbols.remove('INDUSTOWER')
-    symbols.remove('STLTECH')
-    symbols.remove('ATGL')
+#     symbols = nifty['Symbol'].to_list()
+#     symbols.remove('INDUSTOWER')
+#     symbols.remove('STLTECH')
+#     symbols.remove('ATGL')
 
-    # Using islice to split the 498 symbol list into 5 lists of 100 elements each
-    i_symbols = iter(symbols)
-    o_symbols = [list(islice(i_symbols, elem)) for elem in length_to_split]
+#     # Using islice to split the 498 symbol list into 5 lists of 100 elements each
+#     i_symbols = iter(symbols)
+#     o_symbols = [list(islice(i_symbols, elem)) for elem in length_to_split]
 
-    j = 1
-    for li in o_symbols:
-        for i in li:
-            index = nifty[nifty['Symbol'] == i].index
+#     j = 1
+#     for li in o_symbols:
+#         for i in li:
+#             index = nifty[nifty['Symbol'] == i].index
 
-            df = data.DataReader(name=i+".NS", data_source="yahoo", start=str(start_date), end=str(end_date))
-            df = df.reset_index()
+#             df = data.DataReader(name=i+".NS", data_source="yahoo", start=str(start_date), end=str(end_date))
+#             df = df.reset_index()
            
-            # assign the start date open close values and end date open close values
-            nifty.at[index, 'Open_Start'] = df[df['Date'] == pd.to_datetime(start_date)]['Open'].iloc[0]
-            nifty.at[index, 'Open_End'] = df[df['Date'] == pd.to_datetime(end_date)]['Open'].iloc[0]
-            nifty.at[index, 'Close_Start'] = df[df['Date'] == pd.to_datetime(start_date)]['Close'].iloc[0]
-            nifty.at[index, 'Close_End'] = df[df['Date'] == pd.to_datetime(end_date)]['Close'].iloc[0]
+#             # assign the start date open close values and end date open close values
+#             nifty.at[index, 'Open_Start'] = df[df['Date'] == pd.to_datetime(start_date)]['Open'].iloc[0]
+#             nifty.at[index, 'Open_End'] = df[df['Date'] == pd.to_datetime(end_date)]['Open'].iloc[0]
+#             nifty.at[index, 'Close_Start'] = df[df['Date'] == pd.to_datetime(start_date)]['Close'].iloc[0]
+#             nifty.at[index, 'Close_End'] = df[df['Date'] == pd.to_datetime(end_date)]['Close'].iloc[0]
 
-            # get the indices of the rows in df where the return is positive, negative and neutral
-            df['Returns'] = round(df['Close'] - df['Open'], 2)
-            positive_index = df[df['Returns'] > 0].index
-            negative_index = df[df['Returns'] < 0].index
+#             # get the indices of the rows in df where the return is positive, negative and neutral
+#             df['Returns'] = round(df['Close'] - df['Open'], 2)
+#             positive_index = df[df['Returns'] > 0].index
+#             negative_index = df[df['Returns'] < 0].index
 
-            # assign the appropriate labels to the relevant indices
-            df.at[positive_index, 'Type'] = 'Positive'
-            df.at[negative_index, 'Type'] = 'Negative'
+#             # assign the appropriate labels to the relevant indices
+#             df.at[positive_index, 'Type'] = 'Positive'
+#             df.at[negative_index, 'Type'] = 'Negative'
 
-            # get the % of the negative, positive and the neutral count
-            nifty.at[index, 'Negative'] = round(df.Type.value_counts().iloc[0]/df.shape[0], 2)
-            nifty.at[index, 'Positive'] = round(df.Type.value_counts().iloc[1]/df.shape[0], 2)
+#             # get the % of the negative, positive and the neutral count
+#             nifty.at[index, 'Negative'] = round(df.Type.value_counts().iloc[0]/df.shape[0], 2)
+#             nifty.at[index, 'Positive'] = round(df.Type.value_counts().iloc[1]/df.shape[0], 2)
 
-            j += 1
+#             j += 1
 
-        print(nifty.shape)
-    return nifty
+#         print(nifty.shape)
+#     return nifty
+
+@st.cache(suppress_st_warning=True)
+def get_data(symbol, start_date, end_date):
+    print(symbol)
+
+    df = data.DataReader(name=symbol+".NS", data_source="yahoo", start=str(end_date), end=str(start_date))
+    df = df.reset_index()
+
+    # to calculate the momentum, the following four values are required
+    start_open = df[df['Date'] == pd.to_datetime(start_date)]['Open'].iloc[0]
+    end_open = df[df['Date'] == pd.to_datetime(end_date)]['Open'].iloc[0]
+    start_close = df[df['Date'] == pd.to_datetime(start_date)]['Close'].iloc[0]
+    end_close = df[df['Date'] == pd.to_datetime(start_date)]['Close'].iloc[0]
+
+    # to calculate the Frag in the Pan (FIP) values, the following things are required
+    df['Returns'] = round(df['Close'] - df['Open'], 2)
+    positive_index = df[df['Returns'] > 0].index
+    negative_index = df[df['Returns'] < 0].index
+
+    # assign the appropriate labels to the relevant indices
+    df.at[positive_index, 'Type'] = 'Positive'
+    df.at[negative_index, 'Type'] = 'Negative'
+
+    # get the % of the negative, positive and the neutral count
+    negative_percent = round(df.Type.value_counts().iloc[0]/df.shape[0], 2)
+    positive_percent = round(df.Type.value_counts().iloc[1]/df.shape[0], 2)
+
+    print(start_open)
+    print(end_open)
+    print(start_close)
+    print(end_close)
+    print(negative_percent)
+    print(positive_percent)
+    print("/n")
+
+    return start_open, end_open, start_close, end_close, positive_percent, negative_percent
 
 # SideBar Elements
 st.sidebar.title("Configuration Panel")
@@ -146,7 +182,7 @@ submit = form.form_submit_button(label='Submit')
 if submit:
     progress_bar = st.sidebar.progress(0)
 
-    for i in range(100):
+    for i in range(500):
         # Update progress bar.
         progress_bar.progress(i + 1)
 
@@ -160,6 +196,8 @@ if submit:
         status_text.text('Done!')
 
         st.balloons()
-        resultant_data = get_sorted_data(nifty, momentum_start_date, momentum_end_date)
+        # resultant_data = get_sorted_data(nifty, momentum_start_date, momentum_end_date)
+        new_cols = ['Start_Open', 'End_Open', 'Start_Close', 'End_Close', 'Positive_Percent', 'Negative_Percent']
+        nifty[new_cols] = nifty['Symbol'].apply(get_data, args=(momentum_start_date, momentum_end_date))
         
-        st.dataframe(data=resultant_data, width=None, height=None)
+        st.dataframe(data=nifty, width=None, height=None)
