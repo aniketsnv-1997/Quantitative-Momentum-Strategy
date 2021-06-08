@@ -135,7 +135,7 @@ status_text = st.sidebar.empty()
 def get_data(symbol, start_date, end_date):
     print(symbol)
 
-    df = data.DataReader(name=symbol+".NS", data_source="yahoo", start=str(start_date), end=str(end_date))
+    df = data.DataReader(name=symbol+".NS", data_source="yahoo", start=str(start_date), end=str())
     df = df.reset_index()
 
     # to calculate the momentum, the following four values are required
@@ -154,18 +154,18 @@ def get_data(symbol, start_date, end_date):
     df.at[negative_index, 'Type'] = 'Negative'
 
     # get the % of the negative, positive and the neutral count
-    negative_percent = round(df.Type.value_counts().iloc[0]/df.shape[0], 2)
-    positive_percent = round(df.Type.value_counts().iloc[1]/df.shape[0], 2)
+    # negative_percent = round(df.Type.value_counts().iloc[0]/df.shape[0], 2)
+    # positive_percent = round(df.Type.value_counts().iloc[1]/df.shape[0], 2)
 
     print(start_open)
     print(end_open)
     print(start_close)
     print(end_close)
-    print(negative_percent)
-    print(positive_percent)
+    # print(negative_percent)
+    # print(positive_percent)
     print("/n")
 
-    return start_open, end_open, start_close, end_close, positive_percent, negative_percent
+    return start_open, end_open, start_close, end_close
 
 # SideBar Elements
 st.sidebar.title("Configuration Panel")
@@ -197,7 +197,7 @@ if submit:
 
         st.balloons()
         # resultant_data = get_sorted_data(nifty, momentum_start_date, momentum_end_date)
-        new_cols = ['Start_Open', 'End_Open', 'Start_Close', 'End_Close', 'Positive_Percent', 'Negative_Percent']
+        new_cols = ['Start_Open', 'End_Open', 'Start_Close', 'End_Close']
         nifty[new_cols] = nifty['Symbol'].apply(get_data, args=(momentum_start_date, momentum_end_date))
         
         st.dataframe(data=nifty, width=None, height=None)
