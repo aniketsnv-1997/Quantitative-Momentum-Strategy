@@ -182,6 +182,12 @@ submit = form.form_submit_button(label='Submit')
 if submit:
     progress_bar = st.sidebar.progress(0)
 
+    # remove the symbols where the data does not get fetched from the yahoo api
+    nifty = nifty[(nifty['Symbol'] != 'INDUSTOWER') | (nifty['Symbol'] != 'STLTECH') | (nifty['Symbol'] != 'ATGL')]
+
+    new_cols = ['Start_Open', 'End_Open', 'Start_Close', 'End_Close']
+    nifty[new_cols] = nifty['Symbol'].apply(get_data, args=(momentum_start_date, momentum_end_date))
+
     for i in range(500):
         # Update progress bar.
         progress_bar.progress(i + 1)
@@ -197,7 +203,6 @@ if submit:
 
         st.balloons()
         # resultant_data = get_sorted_data(nifty, momentum_start_date, momentum_end_date)
-        new_cols = ['Start_Open', 'End_Open', 'Start_Close', 'End_Close']
-        nifty[new_cols] = nifty['Symbol'].apply(get_data, args=(momentum_start_date, momentum_end_date))
         
-        st.dataframe(data=nifty, width=None, height=None)
+        
+    st.dataframe(data=nifty, width=None, height=None)
