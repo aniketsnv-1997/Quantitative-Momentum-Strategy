@@ -44,7 +44,7 @@ momentum_from_date = form.date_input('Strategy Start Date')
 momentum_to_date = form.date_input('Strategy End Date')
 
 # check box to save the df or not
-check = st.sidebar.checkbox('Save the new processed data as a ".csv" file')
+check = form.checkbox('Save the new processed data as a ".csv" file')
 
 submit = form.form_submit_button(label='Submit')
 
