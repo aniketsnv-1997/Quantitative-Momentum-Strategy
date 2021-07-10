@@ -16,12 +16,16 @@ cffi==1.14.5
 chardet==4.0.0
 click==7.1.2
 colorama==0.4.4
+cryptography==2.8
 cycler==0.10.0
 decorator==5.0.9
 defusedxml==0.7.1
 entrypoints==0.3
+future==0.18.2
+gevent==21.1.2
 gitdb==4.0.7
 GitPython==3.1.17
+greenlet==1.1.0
 idna==2.10
 importlib-metadata==4.3.1
 ipykernel==5.5.5
@@ -55,6 +59,7 @@ pandocfilters==1.4.3
 parso==0.8.2
 pickleshare==0.7.5
 Pillow==8.2.0
+plotly==5.1.0
 prometheus-client==0.10.1
 prompt-toolkit==3.0.18
 protobuf==3.17.1
@@ -66,7 +71,9 @@ pyparsing==2.4.7
 pyrsistent==0.17.3
 python-dateutil==2.8.1
 pytz==2021.1
-# pywinpty==1.1.1
+pywin32==301
+pywinpty==1.1.3
+PyYAML==5.4.1
 pyzmq==22.1.0
 requests==2.25.1
 scipy==1.6.3
@@ -74,7 +81,9 @@ seaborn==0.11.1
 Send2Trash==1.5.0
 six==1.15.0
 smmap==4.0.0
+stocknotebridge==1.0.1
 streamlit==0.82.0
+tenacity==8.0.0
 terminado==0.10.0
 testpath==0.5.0
 toml==0.10.2
@@ -88,6 +97,10 @@ validators==0.18.2
 watchdog==2.1.2
 wcwidth==0.2.5
 webencodings==0.5.1
+websocket==0.2.1
+websocket-client==1.1.0
 widgetsnbextension==3.5.1
 yarl==1.6.3
 zipp==3.4.1
+zope.event==4.5.0
+zope.interface==5.4.0

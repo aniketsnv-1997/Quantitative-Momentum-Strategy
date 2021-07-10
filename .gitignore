@@ -1,7 +1,9 @@
-/__pycache__
-/venv
-*.ipynb_checkpoints
-Quantitative Momentum_ A Practitioner’s Guide to Building a Momentum-Based Stock Selection System ( PDFDrive )
-quantitative_momentum_strategy_#1.ipynb
-Relative Momentum Back Test Result Weekly Rebalancing.png
-Relative Momentum Back Test Result.png
+__pycache__/
+venv/
+stick
+.vscode/
+config.yaml
+Study_Resources/
+test.py
+
+
