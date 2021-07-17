@@ -3,7 +3,7 @@ import streamlit as st
 import pandas as pd
 import matplotlib.pyplot as plt
 import plotly.graph_objects as go
-from helper_functions import deliver, get_daily_data
+from helper_functions import deliver, get_daily_data, get_last_traded_price
 import time
 import numpy as np
 from datetime import datetime as dt
@@ -30,6 +30,7 @@ This app ranks the **CNX 500** listed stocks in the highest order of the followi
 nifty = pd.read_csv("ind_nifty500list.csv")
 static_list = pd.read_csv("final_list.csv")
 
+
 '''
     ## Top 25 High Performing Stocks
 '''
@@ -39,14 +40,14 @@ st.sidebar.title("Configuration Panel")
 
 st.sidebar.write('Press submit to get the momentum ranking on your desired time scale')
 
-form = st.sidebar.form(key='my_form')
-momentum_from_date = form.date_input('Strategy Start Date')
-momentum_to_date = form.date_input('Strategy End Date')
+sidebar_form = st.sidebar.form(key='get_absolute_momentum')
+momentum_from_date = sidebar_form.date_input('Strategy Start Date')
+momentum_to_date = sidebar_form.date_input('Strategy End Date')
 
 # check box to save the df or not
-check = form.checkbox('Save the new processed data as a ".csv" file')
+check = sidebar_form.checkbox('Save the new processed data as a ".csv" file')
 
-submit = form.form_submit_button(label='Submit')
+submit = sidebar_form.form_submit_button(label='Submit')
 
 # if the user submits the start and end date for the strategy, then only execute the logic to get the historical data
 if submit:
@@ -76,6 +77,79 @@ else:
     st.text(f"from July 10, 2020 to June 10, 2021")
     st.dataframe(data=static_list, width=None, height=None)
 
+st.text(" ")
+
+col1, col2 = st.beta_columns(2)
+
+col1.markdown("## Paper Trading - Quantitative Momentum")
+
+form = col2.form(key='refresh_form')
+refresh = form.form_submit_button("Refresh")
+
+top_25 = pd.read_csv("final_list.csv")
+
+paper_trade_data = pd.DataFrame()
+
+open_amount_list = [
+    685.95,
+    1440.05,
+    683.6,
+    195.8,
+    1010.5,
+    1552.55,
+    1251.7,
+    4595,
+    855.05,
+    412,
+    126.95,
+    92.7,
+    2819.65,
+    780,
+    143.8,
+    310.85,
+    275.05,
+    1953.95,
+    4325.05,
+    719.5,
+    642.4,
+    1097.9,
+    927,
+    350.35,
+    369
+]
+
+paper_trade_data['STOCK'] = top_25['Symbol']
+paper_trade_data['PURCHASE_DATE'] = "12-07-2021"
+paper_trade_data['INVESTED_AMOUNT'] = 4000
+paper_trade_data['STOCK_PRICE_AT_INVESTMENT_DATE'] = open_amount_list
+paper_trade_data['UNITS_BOUGHT'] = round(paper_trade_data['INVESTED_AMOUNT'] / paper_trade_data['STOCK_PRICE_AT_INVESTMENT_DATE'], 2)
+paper_trade_data['CURRENT_MARKET_PRICE'] = top_25['Symbol'].apply(get_last_traded_price)
+paper_trade_data['CURRENT_VALUE'] = round(paper_trade_data['CURRENT_MARKET_PRICE'].astype(float) * paper_trade_data['UNITS_BOUGHT'].astype(float), 2)
+paper_trade_data['GAINS (IN %)'] = round(((paper_trade_data['CURRENT_VALUE'] - paper_trade_data['INVESTED_AMOUNT']) / paper_trade_data['INVESTED_AMOUNT']) * 100, 2)
+
+if refresh:
+    paper_trade_data['STOCK'] = top_25['Symbol']
+    paper_trade_data['PURCHASE_DATE'] = "12-07-2021"
+    paper_trade_data['INVESTED_AMOUNT'] = 4000
+    paper_trade_data['STOCK_PRICE_AT_INVESTMENT_DATE'] = open_amount_list
+    paper_trade_data['UNITS_BOUGHT'] = round((paper_trade_data['INVESTED_AMOUNT'] / paper_trade_data['STOCK_PRICE_AT_INVESTMENT_DATE']).astype(float), 2)
+    paper_trade_data['CURRENT_MARKET_PRICE'] = top_25['Symbol'].apply(get_last_traded_price)
+    paper_trade_data['CURRENT_VALUE'] = round(paper_trade_data['CURRENT_MARKET_PRICE'].astype(float) * paper_trade_data['UNITS_BOUGHT'].astype(float), 2)
+    paper_trade_data['GAINS (IN %)'] = round(((paper_trade_data['CURRENT_VALUE'] - paper_trade_data['INVESTED_AMOUNT']) / paper_trade_data['INVESTED_AMOUNT']) * 100, 2)
+    
+st.dataframe(paper_trade_data, width=None, height=None)
+
+col1, col2, col3 = st.beta_columns(3)
+
+total_gains_in_percent = ((paper_trade_data['CURRENT_VALUE'].sum() - paper_trade_data['INVESTED_AMOUNT'].sum()) / paper_trade_data['INVESTED_AMOUNT'].sum()) * 100
+
+col1.markdown(f" #### Invested Amount: {paper_trade_data['INVESTED_AMOUNT'].sum()} INR")
+col2.markdown(f" #### Current Value: {paper_trade_data['CURRENT_VALUE'].sum()} INR")
+col3.markdown(f" #### Total Gains (In %): {round(total_gains_in_percent, 2)}")
+
+st.text(" ")
+
+
 '''
     ## Stock Historical Behavior 
 '''
@@ -93,7 +167,7 @@ to_date = col3.date_input("To", value=today)
 col1, col2 = st.beta_columns(2)
 
 # get the samco api data for the selected company for the selected time period
-daily_data = get_daily_data(company, from_date, to_date)
+daily_data = get_daily_data(company, from_date, to_date, False)
 daily_data_df = pd.DataFrame(daily_data)
 col1.dataframe(data=daily_data_df, width=None, height=370)
 
@@ -126,16 +200,6 @@ if companies.__len__() == 0:
 else:
     col1.dataframe(data=nifty[np.isin(nifty['Symbol'], companies)], width=None, height=None)
 
-col2.subheader("Sectore Specific")
+col2.subheader("Sector Specific")
 industry = col2.selectbox('Industry', nifty.Industry.to_list())
 col2.dataframe(data=nifty[nifty['Industry'] == industry], width=None, height=None)
-
-# '''
-#     ## Had You Invested in this Strategy with...
-# '''
-
-# col1, col2, col3 = st.beta_columns(3)
-# amount = col1.number_input("Rupees (In INR)", min_value = 0)
-# temp = today - timedelta(days=28)
-# start = col2.date_input("From Date", value=temp)
-# end = col3.date_input("To Date", value=today)

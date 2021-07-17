@@ -34,24 +34,55 @@ def get_session_token():
     return dict(r.json())['sessionToken']
 
 
-def get_daily_data(symbol, from_date, to_date):
+def get_daily_data(symbol, from_date, to_date, single_day=False):
     api_headers = {
         'Accept': 'application/json',
         'x-session-token': get_session_token()
     }
     
+    if single_day:
+        results = requests.get(
+            "https://api.stocknote.com/history/candleData",
+            params={
+                "symbolName": symbol,
+                "fromDate": from_date,
+                "toDate": to_date
+            },
+            headers=api_headers
+        )
+        print(dict(results.json()))
+        return dict(results.json())['historicalCandleData'][0]['open']
+
+    else:
+        results = requests.get(
+            "https://api.stocknote.com/history/candleData",
+            params={
+                "symbolName": symbol,
+                "fromDate": from_date,
+                "toDate": to_date
+            },
+            headers=api_headers
+        )
+
+        return dict(results.json())['historicalCandleData']
+
+
+def get_last_traded_price(symbol):
+    api_headers = {
+        'Accept': 'application/json',
+        'x-session-token': get_session_token()
+    }
+
     results = requests.get(
-        "https://api.stocknote.com/history/candleData",
+        "https://api.stocknote.com/quote/getQuote",
         params={
-            "symbolName": symbol,
-            "fromDate": from_date,
-            "toDate": to_date
+            "symbolName": symbol
         },
         headers=api_headers
     )
 
-    return dict(results.json())['historicalCandleData']
-
+    return dict(results.json())['lastTradedPrice']
+    
 
 def get_absolute_change(daily_data):
     from_open_value = daily_data[0]['open']
@@ -102,7 +133,7 @@ def get_fip_score(absolute_change, absolute_positive_days, absolute_negative_day
 def deliver(symbol, from_date, to_date):
 
     # 1. get the daily data 
-    daily_data = get_daily_data(symbol, from_date, to_date)    
+    daily_data = get_daily_data(symbol, from_date, to_date, False)    
 
     # 2. get the absolute change value
     absolute_change = get_absolute_change(daily_data)
