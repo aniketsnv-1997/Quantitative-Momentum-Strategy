@@ -21,14 +21,16 @@ today = dt.today().date()
 st.title("Quantitative Momentum Strategy")
 
 st.markdown("""
-This app ranks the **CNX 500** listed stocks in the highest order of the following two metrics!
+This app ranks the **CNX 200** listed stocks in the highest order of the following two metrics!
 * **Generic Momentum:** [Wikipedia](https://en.wikipedia.org/wiki/Momentum_investing)
 * **Frog In the Pan Score (FIP Score):** [Wikipedia](http://www.stagirit.org/sites/default/files/articles/a_0280_frog_in_the_pan_identifying_the_highest_quality_momentum_stocks_-_alpha_architect.pdf).
 """)
 
 # read the data from the source csv file
-nifty = pd.read_csv("ind_nifty500list.csv")
+nifty = pd.read_csv("ind_nifty200list.csv")
 static_list = pd.read_csv("final_list.csv")
+
+static_list_stocks = set(static_list['Symbol'].to_list())
 
 
 '''
@@ -63,92 +65,37 @@ if submit:
     nifty[['Absolute_Momentum', 'FIP_Score']] = pd.DataFrame(temp.Output.tolist())
 
     nifty_fifty = nifty.sort_values(by=['Absolute_Momentum'], ascending=[False]).reset_index(drop=True).head(50)
-    nifty_twenty_five = nifty_fifty.sort_values(by=['FIP_Score'], ascending=[True]).reset_index(drop=True).head(25)
+    nifty_forty = nifty_fifty.sort_values(by=['FIP_Score'], ascending=[True]).reset_index(drop=True).head(40)
         
+    nifty_forty_stocks = set(nifty_forty['Symbol'].to_list())
+
+    outgoing_stocks = static_list_stocks.difference(nifty_forty_stocks)
+
     if check:
-        nifty_twenty_five.to_csv("final_list.csv", index=False)
+        nifty_forty.to_csv("final_list.csv", index=False)
 
     st.success("Yayyy!! It's Done!")
 
     st.text(f"from {momentum_from_date} to {momentum_to_date}")
-    st.dataframe(data=nifty_twenty_five, width=None, height=None)
+    st.dataframe(data=nifty_forty, width=None, height=None)
+
+    if len(outgoing_stocks) != 0:
+        st.markdown(f" ##### The OUTGOING stocks in this round of rebalancing are: {outgoing_stocks}")
+
+        # logic to get the new incoming stocks
+        incoming_stocks = list(nifty_forty_stocks.difference(static_list_stocks))[:len(outgoing_stocks)]
+
+        # print the new incoming stocks
+        st.markdown(f" ##### The INCOMING stocks in this round of rebalancing are: {incoming_stocks}")
+
+    else:
+        st.markdown(f" ##### There are 0 outgoing stocks in this round of")
 
 else:
     st.text(f"from July 10, 2020 to June 10, 2021")
     st.dataframe(data=static_list, width=None, height=None)
 
 st.text(" ")
-
-col1, col2 = st.beta_columns(2)
-
-col1.markdown("## Paper Trading - Quantitative Momentum")
-
-form = col2.form(key='refresh_form')
-refresh = form.form_submit_button("Refresh")
-
-top_25 = pd.read_csv("final_list.csv")
-
-paper_trade_data = pd.DataFrame()
-
-open_amount_list = [
-    685.95,
-    1440.05,
-    683.6,
-    195.8,
-    1010.5,
-    1552.55,
-    1251.7,
-    4595,
-    855.05,
-    412,
-    126.95,
-    92.7,
-    2819.65,
-    780,
-    143.8,
-    310.85,
-    275.05,
-    1953.95,
-    4325.05,
-    719.5,
-    642.4,
-    1097.9,
-    927,
-    350.35,
-    369
-]
-
-paper_trade_data['STOCK'] = top_25['Symbol']
-paper_trade_data['PURCHASE_DATE'] = "12-07-2021"
-paper_trade_data['INVESTED_AMOUNT'] = 4000
-paper_trade_data['STOCK_PRICE_AT_INVESTMENT_DATE'] = open_amount_list
-paper_trade_data['UNITS_BOUGHT'] = round(paper_trade_data['INVESTED_AMOUNT'] / paper_trade_data['STOCK_PRICE_AT_INVESTMENT_DATE'], 2)
-paper_trade_data['CURRENT_MARKET_PRICE'] = top_25['Symbol'].apply(get_last_traded_price)
-paper_trade_data['CURRENT_VALUE'] = round(paper_trade_data['CURRENT_MARKET_PRICE'].astype(float) * paper_trade_data['UNITS_BOUGHT'].astype(float), 2)
-paper_trade_data['GAINS (IN %)'] = round(((paper_trade_data['CURRENT_VALUE'] - paper_trade_data['INVESTED_AMOUNT']) / paper_trade_data['INVESTED_AMOUNT']) * 100, 2)
-
-if refresh:
-    paper_trade_data['STOCK'] = top_25['Symbol']
-    paper_trade_data['PURCHASE_DATE'] = "12-07-2021"
-    paper_trade_data['INVESTED_AMOUNT'] = 4000
-    paper_trade_data['STOCK_PRICE_AT_INVESTMENT_DATE'] = open_amount_list
-    paper_trade_data['UNITS_BOUGHT'] = round((paper_trade_data['INVESTED_AMOUNT'] / paper_trade_data['STOCK_PRICE_AT_INVESTMENT_DATE']).astype(float), 2)
-    paper_trade_data['CURRENT_MARKET_PRICE'] = top_25['Symbol'].apply(get_last_traded_price)
-    paper_trade_data['CURRENT_VALUE'] = round(paper_trade_data['CURRENT_MARKET_PRICE'].astype(float) * paper_trade_data['UNITS_BOUGHT'].astype(float), 2)
-    paper_trade_data['GAINS (IN %)'] = round(((paper_trade_data['CURRENT_VALUE'] - paper_trade_data['INVESTED_AMOUNT']) / paper_trade_data['INVESTED_AMOUNT']) * 100, 2)
-    
-st.dataframe(paper_trade_data, width=None, height=None)
-
-col1, col2, col3 = st.beta_columns(3)
-
-total_gains_in_percent = ((paper_trade_data['CURRENT_VALUE'].sum() - paper_trade_data['INVESTED_AMOUNT'].sum()) / paper_trade_data['INVESTED_AMOUNT'].sum()) * 100
-
-col1.markdown(f" #### Invested Amount: {paper_trade_data['INVESTED_AMOUNT'].sum()} INR")
-col2.markdown(f" #### Current Value: {paper_trade_data['CURRENT_VALUE'].sum()} INR")
-col3.markdown(f" #### Total Gains (In %): {round(total_gains_in_percent, 2)}")
-
-st.text(" ")
-
 
 '''
     ## Stock Historical Behavior 
@@ -186,6 +133,7 @@ fig.update_layout(
 )
 
 col2.plotly_chart(fig)
+
 
 '''
     ## Base Table View
